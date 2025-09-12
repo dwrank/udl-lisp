@@ -5,8 +5,11 @@
   :depends-on ("magicl")
   :components ((:module "src"
                 :components
-                ((:file "main")
-                 (:file "utils"))))
+                ((:file "packages")
+                 (:file "main")
+                 (:file "utils")
+                 (:file "linear")
+                 (:file "ch4"))))
   :description ""
   :in-order-to ((test-op (test-op "udl/tests"))))
 
