@@ -1,5 +1,5 @@
 
-(in-package #:udl)
+(in-package #:udl.core)
 
 ;; make sure tail recursion optimization is enabled
 (proclaim '(optimize speed))
@@ -16,12 +16,12 @@
       (list (list-length lst) 1)
       (list 1 (list-length lst))))
       
-(defun vec-arange (start stop step &key (layout 'column))
+(defun vec-arange (start stop step &key (layout 'row))
   "Create a column vector from start up to, but not including stop,
   in step increments."
   (let* ((lst (arange start stop step))
          (shape (create-vec-shape lst layout)))
-    (magicl:from-list lst shape :type '(double-float))))
+    (magicl:from-list lst shape :type 'single-float)))
 
 (defun vec-layout (vec)
   (let ((shape (magicl:shape vec)))
@@ -52,6 +52,9 @@
                                  (print-index vec (1+ i))))))
     (print-index vec 0))))
 
+(defun print-mat (mat)
+  (format t "~A~&" mat))
+
 (defun split-int (n)
   (if (evenp n)
       (let ((half (/ n 2)))
@@ -59,17 +62,20 @@
       (let ((half (truncate n 2)))
         (values (1+ half) half))))
 
+(defun split-vec (vec &optional (len1 5) (len2 5))
+  (let ((vlen (vec-length vec)))
+    (if (<= vlen (+ len1 len2))
+        (values vec nil)
+        (values (slice-vec vec 0 len1) (slice-vec vec (- vlen len2) vlen)))))
+
 (defun short-print-vec (vec &optional (len 10))
-  (let ((vec-len (vec-length vec)))
-    (if (<= (vec-length vec) len)
-        (print-vec vec)
-        (multiple-value-bind (len1 len2) (split-int len)
-          (let ((v1 (slice-vec vec 0 len1))
-                (v2 (slice-vec vec (- vec-len len2) vec-len)))
-            (print-vec v1)
-            (format t "... ")
-            (print-vec v2)
-            (terpri))))))
+  (multiple-value-bind (len1 len2) (split-int len)
+    (multiple-value-bind (v1 v2) (split-vec vec len1 len2)
+      (print-vec v1)
+      (if v2
+          (progn (format t "... ")
+                 (print-vec v2)))
+      (terpri))))
 
 (defun print-vec-info (name vec)
   (princ (list (format nil "~&##### ~A #####~&" name)
@@ -77,3 +83,16 @@
 	       (format nil "~&layout: ~A~&" (vec-layout vec))
 	       (format nil "~&length: ~A~&" (vec-length vec)))))
  
+(defun mat-eq (m1 m2)
+  (let ((s1 (magicl:shape m1))
+        (s2 (magicl:shape m2)))
+    (if (not (equal s1 s2))
+        nil
+        (labels ((elem-eq (m1 m2 rows cols row col)
+                   (cond ((>= col cols) (elem-eq m1 m2 rows cols (1+ row) 0))
+                         ((>= row rows) 'T)
+                         ((= (magicl:tref m1 row col) (magicl:tref m2 row col))
+                          (elem-eq m1 m2 rows cols row (1+ col)))
+                         (t nil))))
+          (elem-eq m1 m2 (first s1) (second s1) 0 0)))))
+
