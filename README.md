@@ -13,10 +13,9 @@ https://www.quicklisp.org/beta/
 (ql:quickload :cl-project)
 ```
 
-### Clone magicl in ~/quicklisp/local-projects/.
-```
-git clone https://github.com/quil-lang/magicl.git
-```
+### Load array-operations library
+(ql:quickload :array-operations)
+
 
 ### Add to ~/.sbclrc:
 ```
